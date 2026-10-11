@@ -27,11 +27,11 @@ textarea{width:100%;min-height:96px;margin-top:12px;font:inherit;font-size:16px;
 :focus-visible{outline:3px solid #f2c230;outline-offset:2px}
 </style></head><body>
 <h1>Recipe Cart TikTok maker</h1>
-<p class="sub">A week of 7 photo posts: 4 recipe carousels (these earn saves and reach), 1 Same fridge post, 1 Fridge states or Question post (these show what the app does), and 1 Kroger edition. Recipe carousels end with a Your turn slide showing your real app screen, then a call to action that points to the link in your bio. Every recipe card carries a small Recipe Cart line, and every post comes with a pinned comment. Make slides, save them, post.</p>
+<p class="sub">A week of 7 photo posts: 4 recipe carousels (these earn saves and reach), 1 Same fridge post, 1 Fridge states or Question post (these show what the app does), and 1 Kroger edition. Recipe carousels end with a Your turn slide showing your real app screen, then a call to action that points to tryrecipecart.com. Every recipe card carries a small Recipe Cart line, and every post comes with a pinned comment. Make slides, save them, post.</p>
 <div class="bar"><button class="b p" id="neu">New week of ideas</button><button class="b" id="shuf">Reshuffle</button></div>
 <p class="hint" id="note">Tip: post one a day. Slide 1 does best with a real food or pantry photo; text only is the fallback. If you use AI photos, turn on TikTok's AI-generated label when you post. Save the slides, upload them to TikTok as a photo post, and paste the caption.</p>
 <p class="hint" id="ver"></p><p class="hint" id="used"></p><p class="hint"><button class="b" id="clr" style="min-height:36px;flex:none;padding:0 12px">Clear history</button></p>
-<details class="card" id="bioBox"><summary><b>TikTok bio options (tap to copy)</b></summary><p class="hint">Name field: Recipe Cart | Meal Ideas. Pick one bio and keep it.</p></details>
+<details class="card" id="bioBox"><summary><b>TikTok bio options (tap to copy)</b></summary><p class="hint">Name field: Recipe Cart | Meal Ideas. Pick one bio and keep it.</p><label class="hint" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="linkLive"> My bio link is clickable (tick this once it is)</label><p class="hint" id="linkNote">Unticked: posts tell people to type tryrecipecart.com into their browser.</p></details>
 <details class="card" id="funnelBox"><summary><b>Funnel check (3 numbers per post)</b></summary><p class="hint">1) Saves divided by views: the hook and recipes are working. 2) Profile visits: the call to action slide and pinned comment are working. 3) Bio link clicks and sign ups: the bio and the site are working. Fix the first low number before changing anything after it. Expect small numbers at first, a few dozen posts will tell you more than one.</p></details>
 <details class="card" id="realBox"><summary><b>Brand spine and real app runs</b></summary>
 <p class="hint">Promise: never eat the same thing twice. Proofs: variety, any fridge, cost. Every post uses one proof, and sharing is the growth loop.</p>
@@ -70,7 +70,17 @@ let PT2=false;
 const BAN=[[/clean eating|weight loss|lose weight|detox|fat burn/i,'health claim'],[/\$\d/,'dollar figure without a real run'],[/spend less|saved me|every week now|changed my/i,'result claim'],[/start from scratch|dinner ideas app/i,'old label'],[/kroger (partner|official)|official kroger/i,'implies Kroger partnership']];
 function lint(o){const t=[o.hook,o.cap,...o.s.flat()].join(' '),w=[];BAN.forEach(([r,m])=>{if(r.test(t)&&!(o.real&&m.startsWith('dollar')))w.push(m)});if(!o.k||!CTA[o.k])w.push('no proof tag');return w}
 const pick=a=>a[Math.floor(Math.random()*a.length)];
-const FL="Free at tryrecipecart.com";
+// Until the bio link is clickable (Business account or 1,000 followers), every post tells people to type the address.
+let LINKLIVE=false;try{LINKLIVE=localStorage.getItem('rcLinkLive')==='1'}catch(e){}
+function lk(s){if(LINKLIVE||typeof s!=='string')return s;return s
+ .replace(/for more, link in bio\./g,'for more at tryrecipecart.com.')
+ .replace(/Free, link in bio\./g,'Free at tryrecipecart.com (type it into your browser).')
+ .replace(/ \(link in (my )?bio\)/gi,'')
+ .replace(/at the link in my bio\./g,'at tryrecipecart.com.')
+ .replace(/, link in (my )?bio\./g,' (type it into your browser).')
+ .replace(/link in (my )?bio/gi,'tryrecipecart.com')}
+{const cb=document.getElementById('linkLive');if(cb){cb.checked=LINKLIVE;cb.onchange=()=>{try{localStorage.setItem('rcLinkLive',cb.checked?'1':'0')}catch(e){}const n=document.getElementById('linkNote');if(n)n.textContent='Saved. Reload this page, then tap New week of ideas to remake the posts.'}}}
+const FL=LINKLIVE?"Free at tryrecipecart.com":"Free. Type it in your browser";
 const CTA={var:[["Never eat the same thing twice",FL],["Type your fridge, get new meals",FL]],fridge:[["Full fridge or empty, get a meal",FL],["Type your fridge, get meal ideas",FL]],cost:[["See about what it costs first",FL],["Only buy what's missing",FL]],share:[["Send a meal to someone you cook for",FL],["Share meals with friends and family",FL]],filter:[["Filter meals by time, protein and price",FL],["Get a meal that fits your day",FL]],ask:[["Type your fridge, get a new meal",FL]],recipes:[["Want meals like these from YOUR fridge?",FL],["Type your fridge, get your own meals",FL],["Your fridge, your meals, no repeats",FL]]};
 const TURN=[["Now try your own fridge","Type what you have, add a filter, get meals"],["Your turn","Type 3 foods and pick a filter"],["Try it with your fridge","Add a filter like protein or budget, then tap Get ideas"]];
 const SER={'Takeout swap':'Takeout swap','High protein':'High protein','Lazy dinners':'Lazy dinners','Cheap dinners':'Cheap dinners','Same fridge':'Same fridge','Fridge states':'Any fridge','Never twice':'Never twice','Cost check':'Cost check','Share':'Send-a-meal','Filters':'Filter it','Question':'Fridge Roulette'};
@@ -149,11 +159,13 @@ const LMP={
 'Kroger edition':["Cheap dinners to make from one Kroger run 😋","Easy dinners for the whole week from one shop 😋","Quick dinners worth adding to your cart 😋"]};
 PL.forEach(p=>{if(LMP[p.p])p.h=LMP[p.p];if(p.k==='recipes'&&p.ed){p.ed=[...p.ed,'Swipe for recipes >>>','(Couple edition)','(Work edition)'];if(!['Kroger edition','Cheap dinners'].includes(p.p))p.ed.push('I\'ve got you \ud83d\ude0c')}});
 const POS={},SPICY={};
-PL.forEach(p=>{p.sp=SPICY[p.p]||null;p.h=[...p.h,...(POS[p.p]||[])]});
+PL.forEach(p=>{p.c=lk(p.c);p.sp=SPICY[p.p]||null;p.h=[...p.h,...(POS[p.p]||[])]});
+function capOf(...a){return lk(capOf0(...a))}
+function pinOf(...a){return lk(pinOf0(...a))}
 function tagl(c,sr){const w=c.measureText('Recipe Cart').width;c.save();c.font='600 28px '+F;c.textAlign='left';c.fillText('\u00b7 '+(sr||'dinner from your kitchen'),110+w+16,230);c.restore()}
-function capOf(hook,V,pl,s){const k=/kroger|price|total/i.test(s.flat().join(' ')+' '+pl.c);
+function capOf0(hook,V,pl,s){const k=/kroger|price|total/i.test(s.flat().join(' ')+' '+pl.c);
  return [hook+' \ud83c\udf73',"Type what's in your fridge and get meals like these. Free, link in bio.",pl.sv||'','Ideas inside: '+V.R+'.',pl.q||'Which one first?',tagsFor(pl),k?'Estimates only. Not affiliated with Kroger.':''].filter(Boolean).join('\n\n')}
-function pinOf(pl){const A=["Which one are you making first? Want meals from what is in YOUR fridge? Type it free at tryrecipecart.com, link in my bio.","Drop 3 foods you have and I will turn them into a meal. Or type them free at the link in my bio.","Save this, then type your own fridge at tryrecipecart.com (link in my bio) and get meals like these."];
+function pinOf0(pl){const A=["Which one are you making first? Want meals from what is in YOUR fridge? Type it free at tryrecipecart.com, link in my bio.","Drop 3 foods you have and I will turn them into a meal. Or type them free at the link in my bio.","Save this, then type your own fridge at tryrecipecart.com (link in my bio) and get meals like these."];
  if(pl.p==='Question')return pick([A[1],"Comment 3 foods from your fridge right now and I will turn them into a meal. Or type them free at the link in my bio."]);
  if(pl.p==='Kroger edition')return "Which one first? Type your fridge free at tryrecipecart.com, link in my bio. Prices are estimates, not affiliated with Kroger.";
  return pick(A)}
@@ -310,7 +322,7 @@ function drawLay(c,X,big,small,i,n,last,dk){
   st.forEach((t,q)=>{f(42,400);const ls=ws(c,t,740-(LX-130));if(dr){f(46,800);c.fillStyle=B.ac;c.fillText(String(q+1),LX,y);f(42,400);c.fillStyle=ink;ls.forEach((l,r)=>c.fillText(l,LX+70,y+r*50*k))}y+=ls.length*50*k+24*k});
   return y};
  let k=1;const lim=dd?1195:1285;while(k>.5&&run(k,false)>lim)k-=.04;
- run(k,true);if(dd){c.font='700 42px '+F;c.fillStyle=B.ac;if(buy&&buy.length)ws(c,'Buy: '+buy.join(', '),W-260-(LX-130)).slice(0,2).forEach((l,q)=>c.fillText(l,LX,1235+q*48));else c.fillText('Nothing to buy',LX,1235)}c.font='800 52px '+F;c.fillStyle=B.ac;c.fillStyle=B.ac;c.fillText('Save this for later',LX,1368);c.textAlign='center';c.font='800 54px '+F;c.fillStyle=ink;c.fillText('Type your fridge, get more meals',W/2,1535);c.font='600 44px '+F;c.fillStyle=mute;c.fillText('Free at tryrecipecart.com, link in bio',W/2,1605);c.textAlign='left'}
+ run(k,true);if(dd){c.font='700 42px '+F;c.fillStyle=B.ac;if(buy&&buy.length)ws(c,'Buy: '+buy.join(', '),W-260-(LX-130)).slice(0,2).forEach((l,q)=>c.fillText(l,LX,1235+q*48));else c.fillText('Nothing to buy',LX,1235)}c.font='800 52px '+F;c.fillStyle=B.ac;c.fillStyle=B.ac;c.fillText('Save this for later',LX,1368);c.textAlign='center';c.font='800 54px '+F;c.fillStyle=ink;c.fillText('Type your fridge, get more meals',W/2,1535);c.font='600 44px '+F;c.fillStyle=mute;c.fillText(LINKLIVE?'Free at tryrecipecart.com, link in bio':'Free at tryrecipecart.com',W/2,1605);c.textAlign='left'}
  else if(lay==='stat'){c.font='600 50px '+F;c.fillStyle=mute;c.fillText('Estimates per meal',130,400);let sz=72;c.font='800 '+sz+'px '+F;while(c.measureText(big).width>MW&&sz>40){sz-=4;c.font='800 '+sz+'px '+F}c.fillStyle=ink;c.fillText(big,130,490);
   [[X.G+'g','protein',800],[X.K,'calories',1200]].forEach(r=>{c.font='800 300px '+F;c.fillStyle=B.ac;c.fillText(r[0],120,r[2]);c.font='600 64px '+F;c.fillStyle=ink;c.fillText(r[1],130,r[2]+90)})}
  else if(lay==='vs'){put([{t:big,z:64,w:800,c:ink}],410);
@@ -357,7 +369,7 @@ function drawLay(c,X,big,small,i,n,last,dk){
   let y=470;y=bub(small,y,g,ink,0);y=bub(big,y,B.ac,'#fff',1);y=bub('sent you a recipe card',y,g,ink,0);c.font='600 44px '+F;c.fillStyle=mute;c.fillText('Share my version, one tap',130,y+60)}
  else if(lay==='step'){c.font='800 380px '+F;c.fillStyle=B.ac;c.fillText(String(i),115,740);put([{t:big,z:90,w:800,c:ink},{t:small,z:56,w:600,c:mute,g:28}],1070)}
  else if(lay==='turn'){put([{t:big,z:100,w:800,c:ink},{t:small,z:50,w:600,c:acc,g:16}],470);phone(c,TURN_IMG,220,700,640)}
- else if(lay==='cta'){put([{t:big,z:big.length>24?88:104,w:800,c:ink},{t:small,z:52,w:600,c:acc,g:18}],500);c.fillStyle=v===2||v===3?'#fff':B.ac;c.beginPath();c.roundRect(130,750,820,120,60);c.fill();c.font='800 58px '+F;c.fillStyle=v===2?B.ac:v===3?'#3e7d4f':'#fff';c.textAlign='center';c.fillText('Link in my bio',540,828);c.textAlign='left';phone(c,PI[0],220,930,640)}
+ else if(lay==='cta'){put([{t:big,z:big.length>24?88:104,w:800,c:ink},{t:small,z:52,w:600,c:acc,g:18}],500);c.fillStyle=v===2||v===3?'#fff':B.ac;c.beginPath();c.roundRect(130,750,820,120,60);c.fill();c.font='800 58px '+F;c.fillStyle=v===2?B.ac:v===3?'#3e7d4f':'#fff';c.textAlign='center';c.fillText(LINKLIVE?'Link in my bio':'tryrecipecart.com',540,828);c.textAlign='left';phone(c,PI[0],220,930,640)}
  else put([{t:big,z:big.length<=7?170:big.length<=12?140:big.length<=24?120:100,w:800,c:ink},{t:small,z:58,w:600,c:mute,g:36}],[850,660,1020][i%3]);}
 function nat(c,ph,big,small,i,X){cover(c,ph,0,0,W,H);const NF="-apple-system,'Helvetica Neue',Arial,sans-serif",lc=t=>String(t||'').toLowerCase(),mx=W-260;
  c.textAlign='center';c.fillStyle='#fff';c.shadowColor='rgba(0,0,0,.6)';c.shadowBlur=22;c.shadowOffsetY=3;
@@ -419,7 +431,7 @@ function make(d,o){mark(o.id);stat();const go=()=>{const g=document.createElemen
   const cp=document.createElement('button');cp.className='b';cp.style.cssText='width:100%;margin-top:8px';cp.textContent='Copy caption';
   cp.onclick=()=>{t.select();try{navigator.clipboard.writeText(t.value)}catch{document.execCommand('copy')};cp.textContent='Copied'};
   const pl=document.createElement('p');pl.className='hint';pl.textContent='Pinned comment (post it as soon as the post is live, then pin it)';
-  const tp=document.createElement('textarea');tp.value=o.pin||'Type your fridge free at tryrecipecart.com, link in my bio.';tp.style.minHeight='64px';tp.setAttribute('aria-label','Pinned comment');
+  const tp=document.createElement('textarea');tp.value=o.pin||lk('Type your fridge free at tryrecipecart.com, link in my bio.');tp.style.minHeight='64px';tp.setAttribute('aria-label','Pinned comment');
   const pc=document.createElement('button');pc.className='b';pc.style.cssText='width:100%;margin-top:8px';pc.textContent='Copy pinned comment';pc.onclick=()=>{tp.select();try{navigator.clipboard.writeText(tp.value)}catch{document.execCommand('copy')};pc.textContent='Copied'};
   const h=document.createElement('p');h.className='hint';h.textContent='Image prompts for Gemini (copy one, save the photo, then tap Add photo on that slide). Slides that show an app screen are drawn for you.';
   const ga=document.createElement('button');ga.type='button';ga.className='b';ga.style.cssText='width:100%;margin-top:8px';ga.textContent='Generate all photos';
@@ -436,7 +448,9 @@ document.getElementById('shuf').onclick=()=>{n++;gen()};
 document.getElementById('clr').onclick=()=>{seen=[];try{localStorage.removeItem('rcSeen')}catch{}stat()};
 const prev=ld('rcSet6',null);if(prev&&prev.ideas&&prev.ideas.length&&prev.ideas.every(o=>'lay' in o&&'ser' in o&&'dishes' in o&&PL.some(p=>p.p===o.p))){ideas=prev.ideas;n=prev.n||1;render();stat();ver()}else gen();
 renderSaved();
-const BIOS=["Type your fridge, get dinner ideas. Free \ud83d\udc47","Never eat the same thing twice \ud83c\udf73 Type your fridge, get meals. Free \ud83d\udc47","Dinner ideas with the recipes \ud83c\udf73 More meals free \ud83d\udc47","STOP eating the same meal every night \ud83d\ude24 New meals and recipes \ud83d\udc47 tryrecipecart.com","Meals and recipes from what you have. Free \ud83d\udc47","Never eat the same thing twice \ud83c\udf73 Free meal ideas \ud83d\udc47"];
+const BIOS_LINK=["Type your fridge, get dinner ideas. Free \ud83d\udc47","Never eat the same thing twice \ud83c\udf73 Type your fridge, get meals. Free \ud83d\udc47","Dinner ideas with the recipes \ud83c\udf73 More meals free \ud83d\udc47","STOP eating the same meal every night \ud83d\ude24 New meals and recipes \ud83d\udc47 tryrecipecart.com","Meals and recipes from what you have. Free \ud83d\udc47","Never eat the same thing twice \ud83c\udf73 Free meal ideas \ud83d\udc47"];
+const BIOS_TXT=["Type your fridge, get dinner ideas. Free at tryrecipecart.com","Never eat the same thing twice \ud83c\udf73 Free at tryrecipecart.com","Dinner ideas with the recipes \ud83c\udf73 More meals free at tryrecipecart.com","STOP eating the same meal every night \ud83d\ude24 New meals at tryrecipecart.com","Meals and recipes from what you have. Free at tryrecipecart.com","Never eat the same thing twice \ud83c\udf73 Free meal ideas at tryrecipecart.com"];
+const BIOS=LINKLIVE?BIOS_LINK:BIOS_TXT;
 const bb=document.getElementById('bioBox');BIOS.forEach(b=>{const r=document.createElement('div');r.className='shot';r.innerHTML='<span></span><b>Copy</b>';r.firstChild.textContent=b;r.onclick=()=>{try{navigator.clipboard.writeText(b)}catch{};r.lastChild.textContent='Copied'};bb.append(r)});
 const SMP={C:'3',H:'chicken, rice and broccoli',T:'20',W:'Chicken rice bowl',Q:'$8.40',P:'Chicken'},smp=t=>t.replace(/\{([A-Z])\}/g,(a,c)=>c in SMP?SMP[c]:a),hx=t=>t.replace(/&/g,'&amp;').replace(/</g,'&lt;');
 document.getElementById('hdrList').innerHTML=PL.map(p=>'<p class="hint"><b>'+hx(p.p)+'</b></p><ul style="margin:0 0 8px 18px;padding:0">'+[...p.h,...(p.hr||[]),...(p.x||[])].map(h=>'<li class="hint">'+hx(smp(h))+'</li>').join('')+'</ul><p class="hint">Edition tags: '+hx(smp((p.ed||[]).join(' ')))+'</p>').join('');
